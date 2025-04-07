@@ -18,7 +18,10 @@ elseif ($uri === '/api/fonts' && $method === 'GET') {
     $controller = new FontController();
     $controller->getAll();
 }
-
+elseif (preg_match('/^\/api\/delete-font\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {
+    $controller = new FontController();
+    $controller->delete($matches[1]);
+}
 // creating a font group
 elseif ($uri === '/api/create-group' && $method === 'POST') {
     $controller = new FontGroupController();

@@ -51,4 +51,36 @@ class Font {
             throw new Exception('Failed to retrieve fonts: ' . $e->getMessage());
         }
     }
+
+    //delete specific font
+    public static function deleteFont($fontId)
+{
+    self::initConnection();
+
+    
+    $stmt = self::$db->prepare("SELECT file_path FROM fonts WHERE id = :id");
+    $stmt->bindParam(':id', $fontId, PDO::PARAM_INT);
+    $stmt->execute();
+    $font = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$font) {
+        throw new Exception('Font not found');
+    }
+
+    $stmt = self::$db->prepare("DELETE FROM font_group_files WHERE font_id = :font_id");
+    $stmt->bindParam(':font_id', $fontId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    
+    $stmt = self::$db->prepare("DELETE FROM fonts WHERE id = :id");
+    $stmt->bindParam(':id', $fontId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    
+    $filePath = __DIR__ . '/../../' . $font['file_path'];
+    if (file_exists($filePath)) {
+        unlink($filePath);
+    }
+}
+
 }

@@ -88,4 +88,15 @@ class FontController
             echo json_encode(['error' => $e->getMessage()]);
         }
     }
+    public function delete($fontId)
+{
+    try {
+        Font::deleteFont(intval($fontId));
+        echo json_encode(['success' => 'Font deleted successfully']);
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+}
+
+
 }
