@@ -1,41 +1,43 @@
 import React, { useState, useRef } from 'react';
 
 const Loader = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadStatus, setUploadStatus] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (validateFile(file)) {
-      setSelectedFile(file);
+    const files = Array.from(event.target.files);
+    if (validateFiles(files)) {
+      setSelectedFiles(files);
       setUploadStatus('');
     }
   };
 
   const handleDrop = (event) => {
     event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    if (validateFile(file)) {
-      setSelectedFile(file);
+    const files = Array.from(event.dataTransfer.files);
+    if (validateFiles(files)) {
+      setSelectedFiles(files);
       setUploadStatus('');
     }
   };
 
-  const validateFile = (file) => {
-    if (file && file.name.endsWith('.ttf')) {
-      return true;
-    } else {
+  const validateFiles = (files) => {
+    const invalidFiles = files.filter(file => !file.name.endsWith('.ttf'));
+    if (invalidFiles.length > 0) {
       setUploadStatus('Only .ttf files are allowed');
       return false;
     }
+    return true;
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (selectedFiles.length === 0) return;
 
     const formData = new FormData();
-    formData.append('font', selectedFile);
+    selectedFiles.forEach(file => {
+      formData.append('font[]', file);  // 'font[]' to indicate multiple files
+    });
 
     try {
       const response = await fetch('http://localhost:8080/api/upload-font', {
@@ -45,10 +47,13 @@ const Loader = () => {
 
       const result = await response.json();
       setUploadStatus('Upload successful');
+      setTimeout(() => {
+        setUploadStatus('');
+      }, 3000);
       console.log(result);
-      setSelectedFile(null);
+      setSelectedFiles([]);  // Clear selected files after upload
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading files:', error);
       setUploadStatus('Upload failed');
     }
   };
@@ -77,15 +82,24 @@ const Loader = () => {
 
         <input
           type="file"
+          multiple
           accept=".ttf"
           onChange={handleFileSelect}
           ref={fileInputRef}
           className="hidden"
         />
 
-        {selectedFile && (
+        {selectedFiles.length > 0 && (
           <>
-            <div className="text-sm flex justify-between gap-4 items-center text-gray-600">Selected: {selectedFile.name}
+            <div className="text-sm flex flex-col gap-2 items-center text-gray-600">
+              <span>Selected Files:</span>
+              <ul className="text-sm text-gray-600">
+                {selectedFiles.map((file, index) => (
+                  <li key={index}>{file.name}</li>
+                ))}
+              </ul>
+            </div>
+
             <button
               onClick={(e) => {
                 e.stopPropagation(); 
@@ -95,7 +109,6 @@ const Loader = () => {
             >
               Upload
             </button>
-            </div>
           </>
         )}
 
