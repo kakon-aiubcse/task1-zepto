@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task-1 Zepto</title>
-</head>
-<body>
-    <h1 id="check">Started Working?</h1>
-    <script src="script.js">
-        
-    </script>
-</body>
-</html>
+<?php
+header('Content-Type: application/json');
+require_once __DIR__ . '../../backend/routes/api.php';
+?>
