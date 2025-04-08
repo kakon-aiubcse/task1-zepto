@@ -11,6 +11,7 @@ const Fontgroup = () => {
       try {
         const response = await fetch("http://localhost:8080/api/font-groups");
         const data = await response.json();
+
         setFontGroups(data.font_groups);
       } catch (error) {
         console.error("Error fetching font groups:", error);

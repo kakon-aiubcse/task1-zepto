@@ -8,22 +8,35 @@ const Creategroupform = ({ editGroup, setEditGroup }) => {
   const [fontIdsToRemove, setFontIdsToRemove] = useState([]);
   const [initialFontNames, setInitialFontNames] = useState([]);
 
+  // Fetch fonts once when the component mounts
   useEffect(() => {
-    fetch("http://localhost:8080/api/fonts")
-      .then((res) => res.json())
-      .then((data) => setFonts(data.fonts || []))
-      .catch((err) => console.error("Error fetching fonts:", err));
-  }, []);
+    const fetchFonts = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/fonts");
+        const data = await response.json();
+        setFonts(data.fonts || []);
+      } catch (err) {
+        console.error("Error fetching fonts:", err);
+      }
+    };
+    fetchFonts();
+    const intervalId = setInterval(() => {
+      fetchFonts();
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, []); // This effect only runs once when the component mounts
+  
 
   useEffect(() => {
-    if (editGroup && fonts.length) {
-      setGroupName(editGroup.group_name);
+    if (editGroup) {
       const fontNames = JSON.parse(editGroup.font_names || "[]");
       setInitialFontNames(fontNames);
-      const rows = fontNames.map((name) => ({ font1: name }));
-      setFontRows(rows);
+      setGroupName(editGroup.group_name);
+      setFontRows(fontNames.map((name) => ({ font1: name })));
     }
-  }, [editGroup, fonts]);
+  }, [editGroup]);
+  
 
   const handleFontSelect = (fontId, rowIndex) => {
     const font = fonts.find((f) => f.id === fontId);
@@ -75,21 +88,30 @@ const Creategroupform = ({ editGroup, setEditGroup }) => {
     fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: editGroup 
+        ? JSON.stringify(data) 
+        : JSON.stringify({ group_name: groupName, font_ids: selectedFontIds })
     })
-      .then((res) => res.json())
-      .then((data) => {
-        setMessage(data.message || "Success");
-        setGroupName("");
-        setFontRows([{ font1: "" }]);
-        setInitialFontNames([]);
-        if (setEditGroup) setEditGroup(null);
-        setTimeout(() => setMessage(""), 3000);
-      })
-      .catch(() => {
-        setMessage("Server error");
-        setTimeout(() => setMessage(""), 3000);
-      });
+    .then((res) => res.json())
+    .then((data) => {
+      setMessage(data.message || "Success");
+      setGroupName("");
+      setFontRows([{ font1: "" }]);
+      setInitialFontNames([]);
+
+      fetch("http://localhost:8080/api/fonts")
+        .then((res) => res.json())
+        .then((data) => setFonts(data.fonts || []))
+        .catch((err) => console.error("Error fetching updated fonts:", err));
+
+      if (setEditGroup) setEditGroup(null);
+
+      setTimeout(() => setMessage(""), 3000);
+    })
+    .catch(() => {
+      setMessage("Server error");
+      setTimeout(() => setMessage(""), 3000);
+    });
   };
 
   const addRow = () => {
@@ -103,19 +125,10 @@ const Creategroupform = ({ editGroup, setEditGroup }) => {
   };
 
   return (
-    <div
-      className={`flex flex-col ${
-        editGroup ? "ml-0" : "ml-60"
-      } w-full pt-6 px-4`}
-    >
-      {" "}
+    <div className={`flex flex-col ${editGroup ? "ml-0" : "ml-60"} w-full pt-6 px-4`}>
       <div className="flex flex-col items-start mt-4">
-        <h1 className="text-3xl font-bold mb-2">
-          {editGroup ? "Edit Font Group" : "Create Font Group"}
-        </h1>
-        <h3 className="text-lg text-gray-500 mb-6">
-          You have to select at least two fonts.
-        </h3>
+        <h1 className="text-3xl font-bold mb-2">{editGroup ? "Edit Font Group" : "Create Font Group"}</h1>
+        <h3 className="text-lg text-gray-500 mb-6">You have to select at least two fonts.</h3>
 
         <input
           type="text"
@@ -137,9 +150,7 @@ const Creategroupform = ({ editGroup, setEditGroup }) => {
 
             <select
               className="border rounded p-2"
-              onChange={(e) =>
-                handleFontSelect(parseInt(e.target.value), rowIndex)
-              }
+              onChange={(e) => handleFontSelect(parseInt(e.target.value), rowIndex)}
               value={fonts.find((f) => f.name === row.font1)?.id || ""}
             >
               <option value="">Select Font</option>
@@ -168,33 +179,30 @@ const Creategroupform = ({ editGroup, setEditGroup }) => {
           </button>
 
           <div className="flex space-x-4 mt-4 mr-96">
-  <button
-    onClick={handleSubmit}
-    className="bg-green-700 hover:bg-white hover:text-green-700 hover:border hover:border-green-500 text-white px-6 py-2 rounded"
-  >
-    {editGroup ? "Update Group" : "Create Group"}
-  </button>
+            <button
+              onClick={handleSubmit}
+              className="bg-green-700 hover:bg-white hover:text-green-700 hover:border hover:border-green-500 text-white px-6 py-2 rounded"
+            >
+              {editGroup ? "Update Group" : "Create Group"}
+            </button>
 
-  {editGroup && (
-    <button
-      onClick={() => {
-        setEditGroup(false);
-        setGroupName("");
-        setFontRows([]);
-        setMessage("");
-      }}
-      className="border border-gray-400 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded"
-    >
-      Cancel Update
-    </button>
-  )}
-</div>
-
+            {editGroup && (
+              <button
+                onClick={() => {
+                  setEditGroup(false);
+                  setGroupName("");
+                  setFontRows([]);
+                  setMessage("");
+                }}
+                className="border border-gray-400 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded"
+              >
+                Cancel Update
+              </button>
+            )}
+          </div>
         </div>
 
-        {message && (
-          <p className="my-4 text-base text-blue-900 font-medium">{message}</p>
-        )}
+        {message && <p className="my-4 text-base text-blue-900 font-medium">{message}</p>}
       </div>
     </div>
   );

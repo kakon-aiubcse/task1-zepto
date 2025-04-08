@@ -36,7 +36,7 @@ const FontData = () => {
   };
 
   return (
-    <div className="flex flex-col ml-60 w-full pt-6 px-4 ">
+    <div className="flex flex-col ml-60 w-full pt-6 px-4">
       <div className="flex flex-col items-start justify-start mt-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Our Fonts</h1>
         <h3 className="text-lg text-gray-500 mb-6">
